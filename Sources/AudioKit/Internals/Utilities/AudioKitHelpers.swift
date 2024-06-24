@@ -185,7 +185,7 @@ public extension AUParameterTree {
 }
 
 /// Anything that can hold a value (strings, arrays, etc)
-public protocol Occupiable {
+protocol Occupiable {
     /// Contains elements
     var isEmpty: Bool { get }
     /// Contains no elements
@@ -193,7 +193,7 @@ public protocol Occupiable {
 }
 
 // Give a default implementation of isNotEmpty, so conformance only requires one implementation
-public extension Occupiable {
+extension Occupiable {
     /// Contains no elements
     var isNotEmpty: Bool {
         return !isEmpty
@@ -211,7 +211,7 @@ extension Set: Occupiable {}
     extension AVAudioSession.CategoryOptions: Occupiable {}
 #endif
 
-public extension Sequence where Self.Element: Equatable {
+extension Sequence where Self.Element: Equatable {
     /// Easier to read alternative to !contains
     @inline(__always)
     func doesNotContain(_ member: Element) -> Bool {
