@@ -33,6 +33,9 @@ public class MatrixMixer: Node {
     public var connections: [Node] { inputs }
     public var avAudioNode: AVAudioNode { unit }
 
+    /// Output format to be used when making connections from this node
+    public var outputFormat = Settings.audioFormat
+
     public let unit = instantiate(
         componentDescription:
             AudioComponentDescription(
@@ -52,7 +55,7 @@ public class MatrixMixer: Node {
         // inputs to this mixer.
         var inputCount = UInt32(inputs.count)
         var outputCount = UInt32(1)
-        AudioUnitSetProperty(
+        var status = AudioUnitSetProperty(
             unit.audioUnit,
             kAudioUnitProperty_ElementCount,
             kAudioUnitScope_Input,
@@ -60,7 +63,8 @@ public class MatrixMixer: Node {
             &inputCount,
             UInt32(MemoryLayout<UInt32>.size)
         )
-        AudioUnitSetProperty(
+        CheckError(status)
+        status = AudioUnitSetProperty(
             unit.audioUnit,
             kAudioUnitProperty_ElementCount,
             kAudioUnitScope_Output,
@@ -68,6 +72,7 @@ public class MatrixMixer: Node {
             &outputCount,
             UInt32(MemoryLayout<UInt32>.size)
         )
+        CheckError(status)
     }
 
     private static let masterVolumeElement: AudioUnitElement = 0xFFFFFFFF
@@ -77,17 +82,18 @@ public class MatrixMixer: Node {
     public var masterVolume: Float {
         get {
             var value: AudioUnitParameterValue = 0
-            AudioUnitGetParameter(
+            let status = AudioUnitGetParameter(
                 unit.audioUnit,
                 kMatrixMixerParam_Volume,
                 kAudioUnitScope_Global,
                 Self.masterVolumeElement,
                 &value
             )
+            CheckError(status)
             return value
         }
         set {
-            AudioUnitSetParameter(
+            let status = AudioUnitSetParameter(
                 unit.audioUnit,
                 kMatrixMixerParam_Volume,
                 kAudioUnitScope_Global,
@@ -95,6 +101,7 @@ public class MatrixMixer: Node {
                 newValue,
                 0
             )
+            CheckError(status)
         }
     }
 
@@ -112,7 +119,7 @@ public class MatrixMixer: Node {
     }
 
     public func set(volume: Float, inputChannelIndex: Int) {
-        AudioUnitSetParameter(
+        let status = AudioUnitSetParameter(
             unit.audioUnit,
             kMatrixMixerParam_Volume,
             kAudioUnitScope_Input,
@@ -120,12 +127,13 @@ public class MatrixMixer: Node {
             volume,
             0
         )
+        CheckError(status)
     }
 
     /// Set volume of channel
     /// To map input channel 0 to output channel 1, use (0, 1) crosspoint
     public func set(volume: Float, outputChannelIndex: Int) {
-        AudioUnitSetParameter(
+        let status = AudioUnitSetParameter(
             unit.audioUnit,
             kMatrixMixerParam_Volume,
             kAudioUnitScope_Output,
@@ -133,13 +141,14 @@ public class MatrixMixer: Node {
             volume,
             0
         )
+        CheckError(status)
     }
 
     /// Set volume at crosspoint
     /// To map input channel 0 to output channel 1, use (0, 1) crosspoint
     public func set(volume: Float, atCrosspoints crosspoints: [(Int, Int)]) {
         for crosspoint in crosspoints {
-            AudioUnitSetParameter(
+            let status = AudioUnitSetParameter(
                 unit.audioUnit,
                 kMatrixMixerParam_Volume,
                 kAudioUnitScope_Global,
@@ -147,6 +156,7 @@ public class MatrixMixer: Node {
                 volume,
                 0
             )
+            CheckError(status)
         }
     }
 
