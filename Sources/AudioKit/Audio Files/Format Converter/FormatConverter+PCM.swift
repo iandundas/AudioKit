@@ -2,6 +2,22 @@
 
 import AVFoundation
 
+
+public enum MacWhisperWantsToKnowWhichErrorCode: Int {
+    // 🚓 NOTE: ONLY APPEND NEW VALUES TO THIS to keep the analytics consistent
+    case mustBeCafWavOrAif = 2
+    case extAudioFileOpenURL
+    case inputFileReleased
+    case inputGetPropertyFailed
+    case cantCreateOutputFile
+    case outputFileReleased
+    case setInputFileFormat
+    case setOutputFileFormat
+    case extAudioFileReadError
+    case extAudioFileWriteError
+    // 🚓 NOTE: ONLY APPEND NEW VALUES TO THIS to keep the analytics consistent
+}
+
 // MARK: - internal helper functions
 
 extension FormatConverter {
@@ -29,7 +45,7 @@ extension FormatConverter {
         case .caf:
             format = kAudioFileCAFType
         default:
-            completionHandler?(Self.createError(message: "Output file must be caf, wav or aif."))
+            completionHandler?(Self.createError(message: "Output file must be caf, wav or aif.", code: MacWhisperWantsToKnowWhichErrorCode.mustBeCafWavOrAif.rawValue))
             return
         }
 
@@ -58,12 +74,12 @@ extension FormatConverter {
         }
 
         if noErr != ExtAudioFileOpenURL(inputURL as CFURL, &inputFile) {
-            completionHandler?(Self.createError(message: "Unable to open the input file."))
+            completionHandler?(Self.createError(message: "Unable to open the input file.", code: MacWhisperWantsToKnowWhichErrorCode.extAudioFileOpenURL.rawValue))
             return
         }
 
         guard let strongInputFile = inputFile else {
-            completionHandler?(Self.createError(message: "Unable to open the input file."))
+            completionHandler?(Self.createError(message: "Unable to open the input file.", code: MacWhisperWantsToKnowWhichErrorCode.inputFileReleased.rawValue))
             return
         }
 
@@ -75,7 +91,7 @@ extension FormatConverter {
                                             &inputDescriptionSize,
                                             &inputDescription)
         {
-            completionHandler?(Self.createError(message: "Unable to get the input file data format."))
+            completionHandler?(Self.createError(message: "Unable to get the input file data format.", code: MacWhisperWantsToKnowWhichErrorCode.inputGetPropertyFailed.rawValue))
             return
         }
 
@@ -110,13 +126,13 @@ extension FormatConverter {
                                               &outputFile)
         {
             completionProxy(error: Self.createError(message: "Unable to create output file at \(outputURL.path). " +
-                                "dstFormat \(outputDescription)"),
+                                "dstFormat \(outputDescription)", code: MacWhisperWantsToKnowWhichErrorCode.cantCreateOutputFile.rawValue),
             completionHandler: completionHandler)
             return
         }
 
         guard let strongOutputFile = outputFile else {
-            completionProxy(error: Self.createError(message: "Output file is nil."),
+            completionProxy(error: Self.createError(message: "Output file is nil.", code: MacWhisperWantsToKnowWhichErrorCode.outputFileReleased.rawValue),
                             completionHandler: completionHandler)
             return
         }
@@ -130,7 +146,7 @@ extension FormatConverter {
                                             inputDescriptionSize,
                                             &outputDescription)
         {
-            completionProxy(error: Self.createError(message: "Unable to set data format on input file."),
+            completionProxy(error: Self.createError(message: "Unable to set data format on input file.", code: MacWhisperWantsToKnowWhichErrorCode.setInputFileFormat.rawValue),
                             completionHandler: completionHandler)
             return
         }
@@ -140,7 +156,7 @@ extension FormatConverter {
                                             inputDescriptionSize,
                                             &outputDescription)
         {
-            completionProxy(error: Self.createError(message: "Unable to set the output file data format."),
+            completionProxy(error: Self.createError(message: "Unable to set the output file data format.", code: MacWhisperWantsToKnowWhichErrorCode.setOutputFileFormat.rawValue),
                             completionHandler: completionHandler)
             return
         }
@@ -167,7 +183,7 @@ extension FormatConverter {
                                              &frameCount,
                                              &fillBufList)
                 {
-                    completionProxy(error: Self.createError(message: "Error reading from the input file."),
+                    completionProxy(error: Self.createError(message: "Error reading from the input file.", code: MacWhisperWantsToKnowWhichErrorCode.extAudioFileReadError.rawValue),
                                     completionHandler: completionHandler)
                     didErrorWhileIteratingSRCBuffer = true
                     return
@@ -181,7 +197,7 @@ extension FormatConverter {
                                               frameCount,
                                               &fillBufList)
                 {
-                    completionProxy(error: Self.createError(message: "Error reading from the output file."),
+                    completionProxy(error: Self.createError(message: "Error reading from the output file.", code: MacWhisperWantsToKnowWhichErrorCode.extAudioFileWriteError.rawValue),
                                     completionHandler: completionHandler)
                     didErrorWhileIteratingSRCBuffer = true
                     return
